@@ -1,6 +1,6 @@
 # Physical AI最終課題：Codex CLIで2体のReachy Miniを起動してみた
 
-本課題では、Codex CLIを使って2体のReachy Miniを操作しました。対象は、Windows PCに接続したLiteと、Wi-Fi経由で接続したWirelessです。Codexは公式HTTP APIにコマンドを送り、実験者はロボットの姿勢や音をその場で確認しました。
+本課題では、Codex CLIを使って2体の[Reachy Mini](https://pollen-robotics.com/reachy-mini/)を操作しました。対象は、Windows PCにUSB接続した[Reachy Mini Lite](https://store.pollen-robotics.com/products/reachy-mini-lite-version)と、Wi-Fi経由で接続した[Reachy Mini Wireless](https://store.pollen-robotics.com/products/reachy-mini-wireless-version)です（以下、それぞれ「Lite」「Wireless」と表記）。Codexは公式HTTP APIにコマンドを送り、実験者はロボットの姿勢や音をその場で確認しました。
 
 2026年11月2日、両機は通常の姿勢まで起き上がりました。その後、両機は頭とアンテナを収納姿勢に戻し、制御プログラムも停止しました。
 
