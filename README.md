@@ -1,8 +1,38 @@
-# Physical AI最終課題：2体のReachy Miniを起こし、収納して停止する実験
+# Physical AI最終課題：Codex CLIで2体のReachy Miniを起動してみた
 
 本課題では、Codex CLIを使って2体のReachy Miniを操作しました。対象は、Windows PCに接続したLiteと、Wi-Fi経由で接続したWirelessです。Codexは公式HTTP APIにコマンドを送り、実験者はロボットの姿勢や音をその場で確認しました。
 
 2026年11月2日、両機は通常の姿勢まで起き上がりました。その後、両機は頭とアンテナを収納姿勢に戻し、制御プログラムも停止しました。
+
+## 接続構成
+
+```mermaid
+flowchart TB
+    user["実験者：自然言語で指示・操作を承認"]
+    subgraph pc["Windows PC"]
+        codex["Codex CLI"]
+        ps["PowerShell"]
+        liteapi["Lite用 HTTP API / daemon<br/>127.0.0.1:8000"]
+        codex --> ps
+        ps -->|"HTTP（PC内）"| liteapi
+    end
+    subgraph wireless["Reachy Mini Wireless 本体"]
+        wirelessapi["Wireless用 HTTP API / daemon<br/>reachy-mini.local:8000"]
+        control["モーターなどを制御"]
+        wirelessapi --> control
+    end
+    lite["Reachy Mini Lite"]
+    user --> codex
+    liteapi -->|"USB"| lite
+    ps -->|"HTTP（Wi-Fiネットワーク経由）"| wirelessapi
+```
+
+Lite用のAPIとdaemonはWindows PC上で動き、USB経由でLiteを制御します。Wireless用のAPIとdaemonは本体内で動きます。どちらもポート番号は8000ですが、接続先は異なります。Wirelessへの通信にはSSHを使用していません。
+
+| 対象 | PowerShellからの接続先 |
+|---|---|
+| Lite | `http://127.0.0.1:8000`（Windows PC自身） |
+| Wireless | `http://reachy-mini.local:8000`（Wireless本体） |
 
 ## 実験で行ったこと
 
@@ -27,11 +57,11 @@ APIが要求を受け付けたことと、ロボットが実際に動いたこ�
 
 ## 資料の読み方
 
-全体の流れは「2体の実験記録」から読めます。各機の操作手順には、使用したPowerShellコマンドと、実行前後の確認事項を載せています。
+2体を順に操作するときは「2体の操作順序」を参照してください。各機の操作手順には、状態確認と起床・収納・停止のコマンドをまとめています。
 
 | ファイル | 内容 |
 |---|---|
-| [2体の実験記録](pair-start-stop.md) | 起床から収納・停止までの順序と、両機の実験結果 |
+| [2体の操作順序](pair-start-stop.md) | Wireless→Liteの起床と、Lite→Wirelessの収納・停止 |
 | [Wirelessの操作手順](wireless-operations.md) | Wirelessの状態確認、起床、収納・停止のコマンド |
 | [Liteの操作手順](lite-operations.md) | Liteの状態確認、起床、収納・停止のコマンド |
 

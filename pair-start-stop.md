@@ -1,130 +1,130 @@
-# 2体のReachy Miniを起こし、収納して停止するまで
+# 2体を順番に起こし、収納して停止する
 
-2026年11月2日08:53〜08:56（日本時間）、CodexはWindows PowerShellから公式HTTP APIを呼び出し、WirelessとLiteを順番に操作しました。実験者は、各操作を承認したうえで、ロボットの姿勢と音をその場で確認しました。
+**起床：Wireless → Lite**  
+**収納・停止：Lite → Wireless**
 
-この実験では、Wireless、Liteの順に起床させました。両機が通常の姿勢になったことを確認した後、Lite、Wirelessの順に収納し、daemonを停止しました。daemonとは、ロボットを制御するプログラムのことです。
+Windows PowerShellから、各機の公式HTTP APIを呼び出します。以下は操作順序のガイドです。各ブロックを個別に実行し、確認を挟んでください。一括実行用のスクリプトではありません。
 
-## 起床時の結果（08:53）
+Codexに実行させる場合は、GETによる状態確認も含め、コマンドと影響を示して操作ごとに承認を得ます。頭とアンテナが動く操作では、実験者が周囲の空間を確保してください。
 
-Wirelessでは、Codexが停止中のdaemonを起動しました。このときはwake_up=falseを指定し、起床動作を後の操作に分けました。続いて、Codexはモーターを有効にし、wake-upを指示しました。実験者は、Wirelessが通常の姿勢になり、異音や引っかかりがないことを確認しました。
-
-Liteでは、Codexがwake_up=trueを指定してdaemonを起動しました。この指定によって、daemonの起動に続いて起床動作が実行されました。実験者は、Liteも通常の姿勢になり、異音や引っかかりがないことを確認しました。
-
-| APIで確認した項目 | Wireless | Lite |
-|---|---|---|
-| 制御プログラムの状態 | running（稼働中） | running（稼働中） |
-| 内部の制御処理の準備 | backend ready（準備完了） | backend ready（準備完了） |
-| エラーの有無 | エラーなし | エラーなし |
-| モーターの状態 | enabled（有効） | enabled（有効） |
-| その他の確認 | wake-upの受付IDを受け取り、その後の実行中動作は0件でした。 | 制御ループのエラーは0件でした。メディアは有効、ロックはfree、管理アプリはnullでした。 |
-
-Liteについては、Codexの実行環境でアクセスが拒否されたため、CIMによるCOMポート一覧の取得はできませんでした。それでも、公式HTTP APIによるdaemonの起動と、実機の起床は成功しました。
-
-この結果により、Liteの通常起動から収納・停止までの一連の操作を、実機で確認できました。以前の記録にある「一連の操作は未試験」という記述は、この結果によって更新されます。
-
-## 収納・停止時の結果（08:56）
-
-Codexは、まずLiteに収納と停止を指示しました。実験者がLiteの収納姿勢を確認した後、CodexはWirelessにも同じ操作を行いました。
-
-| 対象 | APIの応答 | 実験者が確認したこと |
-|---|---|---|
-| Lite | stateはstopped（停止済み）、errorはnull（エラーなし）でした。 | 頭とアンテナが収納姿勢になりました。異音や引っかかりはありませんでした。 |
-| Wireless | stateはstopped（停止済み）、errorはnull（エラーなし）でした。 | 頭とアンテナが収納姿勢になりました。異音や引っかかりはありませんでした。 |
-
-この操作で停止したのはdaemonです。実験者は、本体の電源スイッチを操作していません。
-
-## 使用したコマンドと操作の順序
-
-以下では、実際に使ったHTTP APIを、2体の接続先が混ざらないように整理しています。コマンドは一括で実行せず、各段階で結果を確認してから次に進みます。Codexが実行する場合は、状態の問い合わせも含め、実験者から操作ごとの承認を得ます。
-
-### 1. Wirelessの状態を確認する
-
-実験者は、Wirelessの電源とWi-Fi接続を確認し、頭とアンテナの周囲を空けます。Codexは、次のGET要求でdaemonの状態を問い合わせます。
+## 接続先を設定する
 
 ```powershell
 $wireless = 'http://reachy-mini.local:8000'
+$lite = 'http://127.0.0.1:8000'
+```
+
+Wirelessは本体のAPI、LiteはWindows PC上のAPIです。接続構成は[README](README.md)を参照してください。リンク先の詳細手順にある状態確認コマンドを使うときは、Wirelessでは`$base = $wireless`、Liteでは`$base = $lite`を設定します。
+
+## 1. Wirelessのdaemonを起動する
+
+まず、状態を確認します。
+
+```powershell
 Invoke-RestMethod -Method Get -Uri "$wireless/api/daemon/status" -TimeoutSec 5
 ```
 
-応答がstoppedなら、Codexは実験者の承認を得て、次のコマンドでdaemonを起動します。すでにrunningなら、この起動操作は省きます。APIから応答がない場合は、API経由で起動できないため、接続状態を確認します。
+**状態が`stopped`で、APIが応答している場合だけ**、起動について承認を得て次を実行します。`wake_up=false`のため、この段階では起床しません。`running`なら起動を省きます。
 
 ```powershell
 Invoke-RestMethod -Method Post -Uri "$wireless/api/daemon/start?wake_up=false" -TimeoutSec 10
+```
+
+```powershell
 Start-Sleep -Seconds 3
 Invoke-RestMethod -Method Get -Uri "$wireless/api/daemon/status" -TimeoutSec 5
 ```
 
-### 2. Wirelessを起こす
+`running`、backendの準備完了、エラーなしを確認します。
 
-Codexは、daemonが稼働中で、内部の制御処理の準備が完了し、エラーがないことを確認します。さらに、ほかのアプリや動作が実行中でないこと、ロックがfreeであること、起床時の自動起動アプリの設定を調べます。確認用のコマンドは[Wirelessの操作手順](wireless-operations.md)に記載しています。
+## 2. Wirelessを起こす
 
-モーターがdisabledの場合は、Codexが実験者の承認を得てモーターを有効にします。この操作によってモーターに力が入るため、実験者は急な動きや異音がないか確認します。
+[Wirelessの状態確認コマンド](wireless-operations.md#3-起床前の状態を確認する)で、管理アプリなし、ロック`free`、実行中動作0件、モーター状態、自動起動アプリの設定を確認します。
+
+**モーターが`disabled`の場合だけ**、モーター有効化の承認を得て実行します。モーターに力が入るため、急な動きや異音に注意してください。
 
 ```powershell
 Invoke-RestMethod -Method Post -Uri "$wireless/api/motors/set_mode/enabled" -TimeoutSec 8
 Invoke-RestMethod -Method Get -Uri "$wireless/api/motors/status" -TimeoutSec 5
 ```
 
-Codexは、モーターがenabledになったことを確認します。実験者が起床動作を別途承認したら、Codexは次のコマンドを1回だけ実行します。頭とアンテナが動くため、実験者は周囲の空間を再確認してください。
+`enabled`と実機の異常なしを確認してから、起床について別途承認を得ます。daemon/backendが正常で、アプリや動作が実行中でないことを再確認してください。頭とアンテナが動きます。
 
 ```powershell
 Invoke-RestMethod -Method Post -Uri "$wireless/api/move/play/wake_up" -TimeoutSec 10
-Start-Sleep -Seconds 3
-Invoke-RestMethod -Method Get -Uri "$wireless/api/move/running" -TimeoutSec 5
 ```
 
-実験者は、Wirelessが通常の姿勢になったことと、異音や引っかかりがないことを確認します。すでに通常の姿勢でモーターも有効な場合は、起床操作を繰り返しません。
+```powershell
+Start-Sleep -Seconds 3
+Invoke-RestMethod -Method Get -Uri "$wireless/api/move/running" -TimeoutSec 5
+Invoke-RestMethod -Method Get -Uri "$wireless/api/daemon/status" -TimeoutSec 5
+```
 
-### 3. Liteを起こす
+実験者が通常姿勢と、異音・引っかかりがないことを確認します。すでに通常姿勢なら、起床を繰り返しません。
 
-実験者は、Liteの電源とUSB接続を確認し、頭とアンテナの周囲を空けます。Codexは、Windows PC上の管理APIに状態を問い合わせます。
+## 3. Liteを起こす
+
+Liteの電源とUSB接続を確認してから、状態を問い合わせます。
 
 ```powershell
-$lite = 'http://127.0.0.1:8000'
 Invoke-RestMethod -Method Get -Uri "$lite/api/daemon/status" -TimeoutSec 5
 ```
 
-応答がstoppedの場合は、Codexが実験者の承認を得て次のコマンドを実行します。この操作では、daemonの起動に続いて、ロボットが起き上がります。すでにrunningなら、起動コマンドを繰り返しません。
+**状態が`stopped`で、APIが応答している場合だけ**、起床を伴う起動について承認を得て実行します。頭とアンテナが動くため、周囲を空けてください。
 
 ```powershell
 Invoke-RestMethod -Method Post -Uri "$lite/api/daemon/start?wake_up=true" -TimeoutSec 8
+```
+
+```powershell
 Start-Sleep -Seconds 3
 Invoke-RestMethod -Method Get -Uri "$lite/api/daemon/status" -TimeoutSec 5
 Invoke-RestMethod -Method Get -Uri "$lite/api/motors/status" -TimeoutSec 5
 ```
 
-Codexは、daemonがrunning、内部の制御処理が準備完了、モーターがenabledであり、エラーがないことを確認します。実験者は、Liteが通常の姿勢になったことと、異常がないことを確認します。
+`running`、backendの準備完了、エラーなし、モーター`enabled`を確認します。実験者が通常姿勢と、異音・引っかかりがないことを確認します。
 
-APIから応答がない場合は、[Liteの操作手順](lite-operations.md)に従って接続やポートの使用状況を調べます。
+すでに`running`で収納姿勢のままなら、[Liteの操作手順](lite-operations.md)の「3. daemonが稼働中で、起床だけが必要な場合」を使います。起動要求を繰り返さないでください。
 
-### 4. Liteを収納して停止する
+## 4. Liteを収納して停止する
 
-Codexは、実行中のアプリや動作がないこと、ロックがfreeであること、daemonと内部の制御処理にエラーがないことを再確認します。実験者は、頭とアンテナの周囲を空け、収納を伴う停止操作を承認します。
+**事前条件：** 使用中のアプリを終了し、[Liteの状態確認コマンド](lite-operations.md#状態を確認する)で、daemon/backend正常、管理アプリなし、ロック`free`、実行中動作0件を確認します。
+
+頭とアンテナが収納姿勢へ動きます。周囲を空け、Liteの収納・停止について承認を得て実行します。
 
 ```powershell
 Invoke-RestMethod -Method Post -Uri "$lite/api/daemon/stop?goto_sleep=true" -TimeoutSec 8
+```
+
+```powershell
 Start-Sleep -Seconds 3
 Invoke-RestMethod -Method Get -Uri "$lite/api/daemon/status" -TimeoutSec 5
 ```
 
-Codexは、状態がstoppedになり、エラーがないことを確認します。実験者は、Liteの収納姿勢と、異音や引っかかりがないことを確認します。
+`stopped`、エラーなしと、実機の収納姿勢・異常なしを確認してから、Wirelessの停止へ進みます。
 
-### 5. Wirelessを収納して停止する
+## 5. Wirelessを収納して停止する
 
-Liteの停止を確認した後、CodexはWirelessにも同じ事前確認を行います。実験者がWirelessの収納・停止を別途承認したら、次のコマンドを実行します。
+**事前条件：** 使用中のアプリを終了し、[Wirelessの手順1・3](wireless-operations.md)で、daemon/backend正常、管理アプリなし、ロック`free`、実行中動作0件を確認します。
+
+頭とアンテナが収納姿勢へ動きます。周囲を空け、Wirelessの収納・停止について別途承認を得て実行します。
 
 ```powershell
 Invoke-RestMethod -Method Post -Uri "$wireless/api/daemon/stop?goto_sleep=true" -TimeoutSec 10
+```
+
+```powershell
 Start-Sleep -Seconds 3
 Invoke-RestMethod -Method Get -Uri "$wireless/api/daemon/status" -TimeoutSec 5
 ```
 
-Codexは、状態がstoppedになり、エラーがないことを確認します。実験者は、Wirelessの収納姿勢と、異音や引っかかりがないことを確認します。
+`stopped`、エラーなしと、実機の収納姿勢・異常なしを確認します。両機とも、この操作で本体の電源スイッチは切れません。
 
-状態がstoppingの間は、停止処理が進んでいるため、GETで経過を確認します。タイムアウトした場合も、処理が受け付けられている可能性があります。同じPOSTをすぐに再送せず、状態を調べてください。モーター通信エラーや異音、過負荷、想定外の動きが発生した場合は、追加の動作を指示しないでください。
+## 共通の注意事項
 
-## この実験で確認できた範囲
+- APIが応答しない場合は、接続状態を確認します。LiteではUSB接続とポートの使用状況も確認してください。
+- `starting` / `stopping`やタイムアウト時は、GETで状態を確認し、POSTをすぐに再送しないでください。
+- 受付IDや実行中動作0件という応答だけでは、目的の姿勢になったとは判断できません。実機を目視で確認してください。
+- モーター通信エラー、異音、引っかかり、過負荷、想定外の動きがあれば、追加の動作を指示しないでください。
 
-今回、2体の起床・収納・daemon停止を実機で確認できました。2体が撮影や会話を連携して行うことは、この実験では確認していません。
-
-操作にはPollen Roboticsの公式SDK [pollen-robotics/reachy_mini](https://github.com/pollen-robotics/reachy_mini) のHTTP APIを使用しました。Wirelessの起床にSSHは使用していません。今回の成果は、公式APIを使った手順と実測記録です。
+2026-11-02 08:53 JSTに両機の起床、08:56 JSTにLite→Wirelessの収納・停止を実機で確認しました。APIの正常応答に加え、実験者が各姿勢と異常なしを確認しています。使用したAPIは公式SDK [pollen-robotics/reachy_mini](https://github.com/pollen-robotics/reachy_mini) の機能です。
