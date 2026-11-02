@@ -1,32 +1,52 @@
-# Physical AI最終課題：2体のReachy Miniの起床・収納・停止
+# Physical AI最終課題：2体のReachy Miniを起こし、収納して停止する実験
 
-WindowsのCodex CLIから、Reachy Mini WirelessとReachy Mini Liteを順番に起こし、収納姿勢へ戻してdaemonを停止した実機実験の公開記録です。2026-11-02 08:53–08:56 JSTの観測を基準に整理しました。ここに記した状態は実験時点のもので、現在の実機状態を示しません。
+本課題では、Codex CLIを使って2体のReachy Miniを操作しました。対象は、Windows PCに接続したLiteと、Wi-Fi経由で接続したWirelessです。Codexは公式HTTP APIにコマンドを送り、実験者はロボットの姿勢や音をその場で確認しました。
 
-## 何を行い、何を確認したか
+2026年11月2日、両機は通常の姿勢まで起き上がりました。その後、両機は頭とアンテナを収納姿勢に戻し、制御プログラムも停止しました。
 
-1. Wirelessのdaemonを公式HTTP APIで起動し、状態を確認した後、モーターを有効化してwake-upを実行しました。
-2. Liteのdaemonを公式HTTP APIの`wake_up=true`で起動しました。
-3. 人が両機の通常姿勢への到達と、異音・引っかかりがないことを確認しました。
-4. Lite、Wirelessの順に公式HTTP APIの`goto_sleep=true`で収納・daemon停止を実行しました。人が両機の収納姿勢と異常がないことを確認しました。
+## 実験で行ったこと
 
-両機のdaemonは停止状態になりましたが、物理的な電源スイッチは操作していません。HTTP要求の受付や実行中動作0件という表示だけで物理的な成功を判断せず、人の観察と組み合わせています。2体が会話や撮影を連携して一往復する実験は、この公開記録の対象外です。
+実験では、まずWirelessを起こし、次にLiteを起こしました。終了時には、Lite、Wirelessの順に収納して停止しました。
 
-## 公開ファイル
+Codexがコマンドを実行する前に、実験者はその内容とロボットへの影響を確認し、操作ごとに承認しました。コマンドを送った後は、CodexがAPIの応答を確認しました。実験者は、それとは別に、ロボットが目的の姿勢になったことと、異音や引っかかりがないことを確認しました。
+
+両機とも起床と収納に成功しました。ただし、今回停止したのはロボットを制御するプログラムです。本体の電源スイッチは操作していません。
+
+## この資料で使う用語
+
+| 用語 | この資料での意味 |
+|---|---|
+| 起床（wake-up） | ロボットが頭とアンテナを動かし、通常の姿勢になることです。 |
+| 収納 | ロボットが頭とアンテナを収納用の姿勢に戻すことです。 |
+| daemon（デーモン） | ロボットの動作や状態を管理する制御プログラムです。 |
+| HTTP API | PCからロボットの状態を調べたり、動作を指示したりするための窓口です。 |
+| GET | 状態を問い合わせる要求です。 |
+| POST | 起床や停止などの処理を依頼する要求です。 |
+
+APIが要求を受け付けたことと、ロボットが実際に動いたことは、それぞれ確認する必要があります。そのため、この実験ではAPIの応答に加え、実験者による姿勢の確認を成功の条件としました。
+
+## 資料の読み方
+
+全体の流れは「2体の実験記録」から読めます。各機の操作手順には、使用したPowerShellコマンドと、実行前後の確認事項を載せています。
 
 | ファイル | 内容 |
 |---|---|
-| [pair-start-stop.md](pair-start-stop.md) | 2体を扱った順序、08:53–08:56 JSTの実測、共通の安全確認 |
-| [wireless-operations.md](wireless-operations.md) | WirelessのHTTP APIコマンド、事前確認、実測と判定範囲 |
-| [lite-operations.md](lite-operations.md) | LiteのHTTP APIコマンド、事前確認、実測と判定範囲 |
+| [2体の実験記録](pair-start-stop.md) | 起床から収納・停止までの順序と、両機の実験結果 |
+| [Wirelessの操作手順](wireless-operations.md) | Wirelessの状態確認、起床、収納・停止のコマンド |
+| [Liteの操作手順](lite-operations.md) | Liteの状態確認、起床、収納・停止のコマンド |
 
-## 成果物と出典の境界
+ここに記載した状態は、実験当時のものです。再実行するときは、その時点の状態を確認してください。
 
-この起床・収納・停止実験のための独自プログラムは開発していません。成果物は、Codex CLIで調べて提示・実行したPowerShellコマンド、公式APIを使う操作順序、API応答と人による物理確認を区別した記録です。別目的のコードがプロジェクト内に存在しても、今回の操作を自作コードの実行成果とは扱いません。
+## 今回の成果と公式SDKとの関係
 
-APIとdaemonの実装はPollen Roboticsの公式SDK [pollen-robotics/reachy_mini](https://github.com/pollen-robotics/reachy_mini) に属します。実験時のSDK/daemonは1.13.0です。参照先として公式の[REST API資料](https://github.com/pollen-robotics/reachy_mini/blob/main/docs/source/API/rest-api.mdx)、[daemonルーター](https://github.com/pollen-robotics/reachy_mini/blob/main/src/reachy_mini/daemon/app/routers/daemon.py)、[モータールーター](https://github.com/pollen-robotics/reachy_mini/blob/main/src/reachy_mini/daemon/app/routers/motors.py)、[動作ルーター](https://github.com/pollen-robotics/reachy_mini/blob/main/src/reachy_mini/daemon/app/routers/move.py)を示します。リンク先の`main`は閲覧時に更新され得るため、本書の実測値は2026-11-02時点の記録として読んでください。
+今回の起床・収納・停止実験のために、独自のプログラムは開発していません。成果として公開するのは、公式APIを呼び出すPowerShellコマンド、その実行手順、そして実機で確認した結果です。プロジェクト内にある別目的のコードは、今回の操作には使用していません。
 
-今回のWirelessの成功経路は公式HTTP APIで、SSHを使用していません。両機の起床・収納・daemon停止にOpenAI APIキーも不要でした。
+APIとdaemonは、Pollen Roboticsが提供する公式SDK [pollen-robotics/reachy_mini](https://github.com/pollen-robotics/reachy_mini) の機能です。実験時にはSDK/daemon 1.13.0を使用しました。仕様の参照先は、公式の[REST API資料](https://github.com/pollen-robotics/reachy_mini/blob/main/docs/source/API/rest-api.mdx)と[daemonの実装](https://github.com/pollen-robotics/reachy_mini/blob/main/src/reachy_mini/daemon/daemon.py)です。リンク先のmainブランチは更新されるため、実験時の仕様と異なる場合があります。
 
-## 再実行時の安全条件
+Wirelessの起床は公式HTTP APIで成功しました。SSHは使用していません。また、両機の起床・収納・停止にOpenAI APIキーや有料APIは必要ありませんでした。2体が会話や撮影を連携して行う実験については、この資料では扱いません。
 
-コマンドはWindows PowerShell用です。Wirelessは`http://reachy-mini.local:8000`、Liteは実行PC上の`http://127.0.0.1:8000`を使いました。どちらも実行前にその時点の接続先と状態を確認してください。GETを含む実機への接続・状態照会、daemon操作、モーター操作、移動は、それぞれ影響を示して個別承認を得る運用でした。頭とアンテナの周囲を空け、異音・引っかかり・過負荷・想定外の動きがあれば追加の移動やPOSTの再送を止めて状態を確認します。
+## 再実行する際の注意
+
+コマンドはWindows PowerShell用です。Wirelessの接続先は本体の管理API、Liteの接続先はWindows PC上の管理APIです。各機の手順に記載した接続先を確認してください。
+
+実験者は、頭とアンテナの周囲から手や物を離してください。Codexに操作を任せる場合も、状態の問い合わせを含め、操作ごとにコマンドと影響を確認して承認してください。異音、引っかかり、過負荷、想定外の動きが生じた場合は、追加の動作を指示せず、状態を確認してください。
