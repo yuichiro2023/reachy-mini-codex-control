@@ -1,4 +1,4 @@
-# Physical AI最終課題：Codex CLIで2体のReachy Miniを操作
+﻿# Physical AI最終課題：Codex CLIで2体のReachy Miniを操作
 
 本課題では、Codex CLIを使って2体の[Reachy Mini](https://pollen-robotics.com/reachy-mini/)を操作しました。対象は、Windows PCにUSB接続した[Reachy Mini Lite](https://store.pollen-robotics.com/products/reachy-mini-lite-version)と、Wi-Fi経由で接続した[Reachy Mini Wireless](https://store.pollen-robotics.com/products/reachy-mini-wireless-version)です（以下、それぞれ「Lite」「Wireless」と表記）。Codexは公式HTTP APIにコマンドを送り、実験者はロボットの姿勢や音をその場で確認しました。
 
@@ -91,10 +91,11 @@ APIとdaemonは、Pollen Roboticsが提供する公式SDK [pollen-robotics/reach
 
 Wirelessの起動動作は公式HTTP APIで成功しました。最終操作ではSSHを使用していません。また、両機の起動・収納・停止にOpenAI APIキーや有料APIは必要ありませんでした。2体が会話や撮影を連携して行う実験については、この資料では扱いません。
 
-[デモ動画](https://youtu.be/47wRqrJ7LYE)では、Codex CLIによる操作と実機の動きを示しています。今回確認したのは2体の順次起動・停止であり、自律協調・同期制御や音声・撮影を組み合わせた実機の一往復は検証していません。
+[デモ動画](https://youtu.be/xGLIWfysiMY)では、Codex CLIによる操作と実機の動きを示しています。今回確認したのは2体の順次起動・停止であり、自律協調・同期制御や音声・撮影を組み合わせた実機の一往復は検証していません。
 
 ## 再実行する際の注意
 
 コマンドはWindows PowerShell用です。Wirelessの接続先は本体の管理API、Liteの接続先はWindows PC上の管理APIです。各機の手順に記載した接続先を確認してください。
 
 実験者は、頭とアンテナの周囲から手や物を離してください。Codexに操作を任せる場合も、状態の問い合わせを含め、操作ごとにコマンドと影響を確認して承認してください。異音、引っかかり、過負荷、想定外の動きが生じた場合は、追加の動作を指示せず、状態を確認してください。
+
