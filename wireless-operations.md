@@ -3,6 +3,8 @@
 接続先：`http://reachy-mini.local:8000`  
 使用環境：Windows PowerShell、公式SDK/daemon 1.13.0
 
+環境の準備は[実行環境](docs/environment.md)、Codexとの進め方は[協働手順](docs/codex-workflow.md)を参照してください。
+
 **各操作を個別に実行してください。一括実行用のスクリプトではありません。** Codexに実行させる場合は、GETによる状態確認も含め、コマンドと影響を確認して操作ごとに承認します。頭・アンテナの周囲から手や物を離してください。
 
 ## 1. daemonの状態を確認する
